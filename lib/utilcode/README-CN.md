@@ -2,10 +2,10 @@
 
 Gradle:
 ```groovy
-implementation 'com.blankj:utilcode:1.25.5'
+implementation 'com.blankj:utilcode:1.26.0'
 
 // if u use AndroidX, use the following
-implementation 'com.blankj:utilcodex:1.25.5'
+implementation 'com.blankj:utilcodex:1.26.0'
 ```
 
 
@@ -22,6 +22,7 @@ startActivities                : 启动多个 Activity
 startHomeActivity              : 回到桌面
 getActivityList                : 获取 Activity 栈链表
 getLauncherActivity            : 获取启动项 Activity
+getMainActivities              : 获取主的 Activity 们
 getTopActivity                 : 获取栈顶 Activity
 isActivityAlive                : 判断 Activity 是否存活
 isActivityExistsInStack        : 判断 Activity 是否存在栈中
@@ -77,16 +78,55 @@ getAppsInfo                       : 获取所有已安装 App 信息
 getApkInfo                        : 获取 Apk 信息
 ```
 
+* ### 数组相关 -> [ArrayUtils.java][array.java] -> [Test][array.test]
+```
+newArray          : 新建数组
+newLongArray      : 新建长整型数组
+newIntArray       : 新建整型数组
+newShortArray     : 新建 short 数组
+newCharArray      : 新建字符数组
+newByteArray      : 新建字节数组
+newDoubleArray    : 新建双精度数组
+newFloatArray     : 新建浮点数数组
+newBooleanArray   : 新建 boolean 数组
+isEmpty           : 判断数组是否为空
+getLength         : 获取数组长度
+isSameLength      : 判断两数组长度是否相等
+get               : 获取数组的索引值
+set               : 设置数组的索引值
+equals            : 判断数组是否相等
+reverse           : 逆序数组
+copy              : 拷贝数组
+subArray          : 截取数组
+add               : 增加数组
+remove            : 移除指定的索引
+removeElement     : 移除指定的元素
+indexOf           : 查找第一个元素的索引
+lastIndexOf       : 查找最后一个元素的索引
+contains          : 判断是否包含该元素
+toPrimitive       : 装箱数组转基本类型数组
+toObject          : 基本类型数组转装箱数组
+asList            : 转为链表
+asUnmodifiableList: 转为不可变链表
+asArrayList       : 转为数组链表
+asLinkedList      : 转为双向链表
+sort              : 排序
+forAllDo          : 对所有元素做操作
+toString          : 数组转为字符串
+```
+
 * ### 栏相关 -> [BarUtils.java][bar.java] -> [Demo][bar.demo]
 ```
 getStatusBarHeight                   : 获取状态栏高度（px）
 setStatusBarVisibility               : 设置状态栏是否可见
 isStatusBarVisible                   : 判断状态栏是否可见
 setStatusBarLightMode                : 设置状态栏是否为浅色模式
+isStatusBarLightMode                 : 判断状态栏是否为浅色模式
 addMarginTopEqualStatusBarHeight     : 为 view 增加 MarginTop 为状态栏高度
 subtractMarginTopEqualStatusBarHeight: 为 view 减少 MarginTop 为状态栏高度
 setStatusBarColor                    : 设置状态栏颜色
 setStatusBarColor4Drawer             : 为 DrawerLayout 设置状态栏颜色
+transparentStatusBar                 : 透明状态栏
 getActionBarHeight                   : 获取 ActionBar 高度
 setNotificationBarVisibility         : 设置通知栏是否可见
 getNavBarHeight                      : 获取导航栏高度
@@ -95,6 +135,8 @@ isNavBarVisible                      : 判断导航栏是否可见
 setNavBarColor                       : 设置导航栏颜色
 getNavBarColor                       : 获取导航栏颜色
 isSupportNavBar                      : 判断是否支持导航栏
+setNavBarLightMode                   : 设置状态栏是否为浅色模式
+isNavBarLightMode                    : 判断状态栏是否为浅色模式
 ```
 
 * ### 亮度相关 -> [BrightnessUtils.java][brightness.java] -> [Demo][brightness.demo]
@@ -224,7 +266,10 @@ cleanCustomDir       : 清除自定义目录下的文件
 
 * ### 点击相关 -> [ClickUtils.java][click.java] -> [Demo][click.demo]
 ```
-applyScale                          : 应用点击缩放
+applyPressedViewScale               : 应用点击后对视图缩放
+applyPressedViewAlpha               : 应用点击后对视图改变透明度
+applyPressedBgAlpha                 : 应用点击后对背景改变透明度
+applyPressedBgDark                  : 应用点击后对背景加深
 applySingleDebouncing               : 对单视图应用防抖点击
 applyGlobalDebouncing               : 对所有设置 GlobalDebouncing 的视图应用防抖点击
 ClickUtils#OnDebouncingClickListener: 防抖点击监听器
@@ -240,6 +285,46 @@ deepClone: 深度克隆
 ```
 closeIO       : 关闭 IO
 closeIOQuietly: 安静关闭 IO
+```
+
+* ### 集合相关 -> [CollectionUtils.java][collection.java] -> [Test][collection.test]
+```
+newUnmodifiableList[NotNull]: 新建只读[非空]链表
+newArrayList[NotNull]       : 新建数组型[非空]链表
+newLinkedList[NotNull]      : 新建指针型[非空]链表
+newHashSet[NotNull]         : 新建哈希[非空]集合
+newTreeSet[NotNull]         : 新建有序[非空]集合
+newSynchronizedCollection   : 新建同步集合
+newUnmodifiableCollection   : 新建只读集合
+union                       : 获取并集
+intersection                : 获取交集
+disjunction                 : 获取并集减交集
+subtract                    : 获取差集
+containsAny                 : 判断是否有交集
+getCardinalityMap           : 获取集合中所有元素的基数
+isSubCollection             : 是否子集
+isProperSubCollection       : 是否真子集
+isEqualCollection           : 判断集合是否相等
+cardinality                 : 获取集合中元素的基数
+find                        : 查找第一个符合条件的元素
+forAllDo                    : 对所有元素做操作
+filter                      : 删除原集合中不符合条件的元素
+select                      : 查找出所有符合条件的元素并返回新集合
+selectRejected              : 查找出所有不符合条件的元素并返回新集合
+transform                   : 对原集合进行转变
+collect                     : 转变为新的集合
+countMatches                : 查找到匹配的元素个数
+exists                      : 判断集合是否存在符合条件的元素
+addIgnoreNull               : 新增元素如果不为空
+addAll                      : 新增多个元素
+get                         : 获取集合元素
+size                        : 获取集合个数
+sizeIsEmpty                 : 判断个数是否为零
+isEmpty                     : 判断是否为空
+isNotEmpty                  : 判断是否非空
+retainAll                   : 保留元素
+removeAll                   : 删除下来
+toString                    : 集合转为字符串
 ```
 
 * ### 颜色相关 -> [ColorUtils.java][color.java]
@@ -369,14 +454,10 @@ isFile                    : 判断是否是文件
 createOrExistsDir         : 判断目录是否存在，不存在则判断是否创建成功
 createOrExistsFile        : 判断文件是否存在，不存在则判断是否创建成功
 createFileByDeleteOldFile : 判断文件是否存在，存在则在创建之前删除
-copyDir                   : 复制目录
-copyFile                  : 复制文件
-moveDir                   : 移动目录
-moveFile                  : 移动文件
+copy                      : 复制文件或目录
+move                      : 移动文件或目录
 delete                    : 删除文件或目录
-deleteDir                 : 删除目录
-deleteFile                : 删除文件
-deleteAllInDir            : 删除目录下所有东西
+deleteAllInDir            : 删除目录下所有内容
 deleteFilesInDir          : 删除目录下所有文件
 deleteFilesInDirWithFilter: 删除目录下所有过滤的文件
 listFilesInDir            : 获取目录下所有文件
@@ -384,16 +465,15 @@ listFilesInDirWithFilter  : 获取目录下所有过滤的文件
 getFileLastModified       : 获取文件最后修改的毫秒时间戳
 getFileCharsetSimple      : 简单获取文件编码格式
 getFileLines              : 获取文件行数
-getDirSize                : 获取目录大小
-getFileSize               : 获取文件大小
-getDirLength              : 获取目录长度
-getFileLength             : 获取文件长度
+getSize                   : 获取文件或目录大小
+getLength                 : 获取文件或目录长度
 getFileMD5                : 获取文件的 MD5 校验码
 getFileMD5ToString        : 获取文件的 MD5 校验码
 getDirName                : 根据全路径获取最长目录
 getFileName               : 根据全路径获取文件名
 getFileNameNoExtension    : 根据全路径获取文件名不带拓展名
 getFileExtension          : 根据全路径获取文件拓展名
+notifySystemToScan        : 通知系统扫描文件
 ```
 
 * ### Fragment 相关 -> [FragmentUtils.java][fragment.java] -> [Demo][fragment.demo]
@@ -538,6 +618,21 @@ json                     : log 字符串之 json
 xml                      : log 字符串之 xml
 ```
 
+* ### Map 相关 -> [MapUtils.java][map.java] -> [Test][map.test]
+```
+newUnmodifiableMap: 创建 UnmodifiableMap
+newHashMap        : 创建 HashMap
+newLinkedHashMap  : 创建 LinkedHashMap
+newTreeMap        : 创建 TreeMap
+newHashTable      : 创建 HashTable
+isEmpty           : 判断 Map 是否为空
+isNotEmpty        : 判断 Map 是否非空
+size              : 获取 Map 元素个数
+forAllDo          : 对所有元素做操作
+transform         : 对 Map 做转变
+toString          : Map 转为字符串
+```
+
 * ### MetaData 相关 -> [MetaDataUtils.java][metaData.java] -> [Demo][metaData.demo]
 ```
 getMetaDataInApp     : 获取 application 的 meta-data 值
@@ -570,6 +665,15 @@ getNetMaskByWifi                      : 根据 WiFi 获取子网掩码 IP 地址
 getServerAddressByWifi                : 根据 WiFi 获取服务端 IP 地址
 registerNetworkStatusChangedListener  : 注册网络状态改变监听器
 unregisterNetworkStatusChangedListener: 注销网络状态改变监听器
+```
+
+* ### 通知相关 -> [NotificationUtils.java][notification.java] -> [Demo][notification.demo]
+```
+areNotificationsEnabled     : 判断通知是否可用
+notify                      : 发送通知
+cancel                      : 取消通知
+cancelAll                   : 取消所有通知
+setNotificationBarVisibility: 设置通知栏是否可见
 ```
 
 * ### 对象相关 -> [ObjectUtils.java][object.java] -> [Test][object.test]
@@ -650,11 +754,9 @@ getPhoneType       : 获取移动终端类型
 isSimCardReady     : 判断 sim 卡是否准备好
 getSimOperatorName : 获取 Sim 卡运营商名称
 getSimOperatorByMnc: 获取 Sim 卡运营商名称
-getPhoneStatus     : 获取手机状态信息
 dial               : 跳至拨号界面
 call               : 拨打 phoneNumber
 sendSms            : 跳至发送短信界面
-sendSmsSilent      : 发送短信
 ```
 
 * ### 进程相关 -> [ProcessUtils.java][process.java] -> [Demo][process.demo]
@@ -698,12 +800,23 @@ getReplaceAll  : 替换所有正则匹配的部分
 
 * ### 资源相关 -> [ResourceUtils.java][resource.java] -> [Demo][resource.demo]
 ```
-copyFileFromAssets: 从 assets 中拷贝文件
-readAssets2String : 从 assets 中读取字符串
-readAssets2List   : 从 assets 中按行读取字符串
-copyFileFromRaw   : 从 raw 中拷贝文件
-readRaw2String    : 从 raw 中读取字符串
-readRaw2List      : 从 raw 中按行读取字符串
+getDrawable        : 获取 Drawable
+getIdByName        : 根据名字获取 ID
+getStringIdByName  : 根据名字获取 string ID
+getColorIdByName   : 根据名字获取 color ID
+getDimenIdByName   : 根据名字获取 dimen ID
+getDrawableIdByName: 根据名字获取 dimen ID
+getMipmapIdByName  : 根据名字获取 mipmap ID
+getLayoutIdByName  : 根据名字获取 layout ID
+getStyleIdByName   : 根据名字获取 style ID
+getAnimIdByName    : 根据名字获取 anim ID
+getMenuIdByName    : 根据名字获取 menu ID
+copyFileFromAssets : 从 assets 中拷贝文件
+readAssets2String  : 从 assets 中读取字符串
+readAssets2List    : 从 assets 中按行读取字符串
+copyFileFromRaw    : 从 raw 中拷贝文件
+readRaw2String     : 从 raw 中读取字符串
+readRaw2List       : 从 raw 中按行读取字符串
 ```
 
 * ### Rom 相关 -> [RomUtils.java][rom.java] -> [Demo][rom.demo]
@@ -759,6 +872,7 @@ getSleepDuration   : 获取进入休眠时长
 isSDCardEnableByEnvironment: 根据 Environment 判断 SD 卡是否可用
 getSDCardPathByEnvironment : 根据 Environment 获取 SD 卡路径
 getSDCardInfo              : 获取 SD 卡信息
+getMountedSDCardPath       : 获取已挂载的 SD 卡路径
 ```
 
 * ### 服务相关 -> [ServiceUtils.java][service.java]
@@ -769,6 +883,11 @@ stopService          : 停止服务
 bindService          : 绑定服务
 unbindService        : 解绑服务
 isServiceRunning     : 判断服务是否运行
+```
+
+* ### 阴影相关 -> [ShadowUtils.java][shadow.java] -> [Demo][shadow.demo]
+```
+apply: 应用阴影
 ```
 
 * ### Shell 相关 -> [ShellUtils.java][shell.java]
@@ -944,6 +1063,8 @@ isToday                 : 判断是否今天
 isLeapYear              : 判断是否闰年
 getChineseWeek          : 获取中式星期
 getUSWeek               : 获取美式式星期
+isAm                    : 判断是否上午
+isPm                    : 判断是否下午
 getValueByCalendarField : 根据日历字段获取值
 getChineseZodiac        : 获取生肖
 getZodiac               : 获取星座
@@ -963,6 +1084,18 @@ showCustomLong : 显示长时自定义吐司
 cancel         : 取消吐司显示
 ```
 
+* ### 触摸相关 -> [TouchUtils.java][touch.java]
+```
+setOnTouchListener: 设置触摸事件
+```
+
+* ### UI 消息相关 -> [UiMessageUtils.java][uiMessage.java]
+```
+send          : 发送消息
+addListener   : 新增消息监听器
+removeListener: 移除消息监听器
+```
+
 * ### URI 相关 -> [UriUtils.java][uri.java]
 ```
 file2Uri: file 转 uri
@@ -975,6 +1108,15 @@ vibrate: 震动
 cancel : 取消
 ```
 
+* ### 视图相关 -> [ViewUtils.java][view.java]
+```
+setViewEnabled      : 设置视图是否可用
+runOnUiThread       : 在 UI 线程运行
+runOnUiThreadDelayed: 在 UI 线程延迟运行
+isLayoutRtl         : 布局是否从右到左
+fixScrollViewTopping: 修复 ScrollView 置顶问题
+```
+
 * ### 压缩相关 -> [ZipUtils.java][zip.java] -> [Test][zip.test]
 ```
 zipFiles          : 批量压缩文件
@@ -984,6 +1126,13 @@ unzipFileByKeyword: 解压带有关键字的文件
 getFilesPath      : 获取压缩文件中的文件路径链表
 getComments       : 获取压缩文件中的注释链表
 ```
+
+
+## 打个小广告
+
+欢迎加入我的知识星球「**[基你太美](https://t.zsxq.com/FmeqfYF)**」，我会在星球中分享 [AucFrame](https://blankj.com/2019/07/22/auc-frame/) 框架、大厂面经、[AndroidUtilCode](https://github.com/Blankj/AndroidUtilCode) 更详尽的说明...一切我所了解的知识，你可以通过支付进入我的星球「**[基你太美](https://t.zsxq.com/FmeqfYF)**」进行体验，加入后优先观看星球中精华的部分，如果觉得星球的内容对自身没有收益，你可以自行申请退款退出星球，也没必要加我好友；**如果你已确定要留在我的星球，可以通过扫描如下二维码（备注：基你太美）加我个人微信，发送给我你的星球 ID，方便我后续拉你进群(PS：进得越早价格越便宜)。**
+
+![我的二维码](https://raw.githubusercontent.com/Blankj/AndroidUtilCode/master/art/wechat.png)
 
 
 
@@ -998,6 +1147,9 @@ getComments       : 获取压缩文件中的注释链表
 
 [app.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/AppUtils.java
 [app.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/app/AppActivity.kt
+
+[array.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ArrayUtils.java
+[array.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/ArrayUtilsTest.java
 
 [bar.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/BarUtils.java
 [bar.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/bar/BarActivity.kt
@@ -1036,6 +1188,9 @@ getComments       : 获取压缩文件中的注释链表
 [clone.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/CloneUtilsTest.java
 
 [close.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/CloseUtils.java
+
+[collection.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/CollectionUtils.java
+[collection.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/CollectionUtilsTest.java
 
 [color.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ColorUtils.java
 [color.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/ColorUtilsTest.java
@@ -1086,11 +1241,17 @@ getComments       : 获取压缩文件中的注释链表
 [log.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/LogUtils.java
 [log.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/log/LogActivity.kt
 
+[map.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/MapUtils.java
+[map.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/MapUtilsTest.java
+
 [metaData.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/MetaDataUtils.java
 [metaData.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/metaData/MetaDataActivity.kt
 
 [network.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/NetworkUtils.java
 [network.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/network/NetworkActivity.kt
+
+[notification.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/NotificationUtils.java
+[notification.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/notification/NotificationActivity.kt
 
 [object.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ObjectUtils.java
 [object.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/ObjectUtilsTest.java
@@ -1127,6 +1288,9 @@ getComments       : 获取压缩文件中的注释链表
 
 [service.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ServiceUtils.java
 
+[shadow.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ShadowUtils.java
+[shadow.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/shadow/ShadowActivity.kt
+
 [shell.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ShellUtils.java
 
 [size.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/SizeUtils.java
@@ -1154,10 +1318,16 @@ getComments       : 获取压缩文件中的注释链表
 [toast.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ToastUtils.java
 [toast.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/toast/ToastActivity.kt
 
+[touch.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/TouchUtils.java
+
+[uiMessage.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/UiMessageUtils.java
+
 [uri.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/UriUtils.java
 
 [vibrate.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/VibrateUtils.java
 [vibrate.demo]: https://github.com/Blankj/AndroidUtilCode/blob/master/feature/utilcode/pkg/src/main/java/com/blankj/utilcode/pkg/feature/vibrate/VibrateActivity.kt
+
+[view.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ViewUtils.java
 
 [zip.java]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/main/java/com/blankj/utilcode/util/ZipUtils.java
 [zip.test]: https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/src/test/java/com/blankj/utilcode/util/ZipUtilsTest.java

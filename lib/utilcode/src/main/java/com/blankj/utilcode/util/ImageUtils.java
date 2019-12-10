@@ -157,18 +157,25 @@ public final class ImageUtils {
      */
     public static Bitmap view2Bitmap(final View view) {
         if (view == null) return null;
-        Bitmap ret = Bitmap.createBitmap(view.getWidth(),
-                view.getHeight(),
-                Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(ret);
-        Drawable bgDrawable = view.getBackground();
-        if (bgDrawable != null) {
-            bgDrawable.draw(canvas);
+        boolean drawingCacheEnabled = view.isDrawingCacheEnabled();
+        boolean willNotCacheDrawing = view.willNotCacheDrawing();
+        view.setDrawingCacheEnabled(true);
+        view.setWillNotCacheDrawing(false);
+        final Bitmap drawingCache = view.getDrawingCache();
+        Bitmap bitmap;
+        if (null == drawingCache) {
+            view.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+            view.buildDrawingCache();
+            bitmap = Bitmap.createBitmap(view.getDrawingCache());
         } else {
-            canvas.drawColor(Color.WHITE);
+            bitmap = Bitmap.createBitmap(drawingCache);
         }
-        view.draw(canvas);
-        return ret;
+        view.destroyDrawingCache();
+        view.setWillNotCacheDrawing(willNotCacheDrawing);
+        view.setDrawingCacheEnabled(drawingCacheEnabled);
+        return bitmap;
     }
 
     /**
@@ -1562,7 +1569,7 @@ public final class ImageUtils {
      * @param filePath The path of file.
      * @return the type of image
      */
-    public static String getImageType(final String filePath) {
+    public static ImageType getImageType(final String filePath) {
         return getImageType(getFileByPath(filePath));
     }
 
@@ -1572,12 +1579,12 @@ public final class ImageUtils {
      * @param file The file.
      * @return the type of image
      */
-    public static String getImageType(final File file) {
-        if (file == null) return "";
+    public static ImageType getImageType(final File file) {
+        if (file == null) return null;
         InputStream is = null;
         try {
             is = new FileInputStream(file);
-            String type = getImageType(is);
+            ImageType type = getImageType(is);
             if (type != null) {
                 return type;
             }
@@ -1592,35 +1599,56 @@ public final class ImageUtils {
                 e.printStackTrace();
             }
         }
-        return getFileExtension(file.getAbsolutePath()).toUpperCase();
+        return null;
     }
 
-    private static String getFileExtension(final String filePath) {
-        if (isSpace(filePath)) return filePath;
-        int lastPoi = filePath.lastIndexOf('.');
-        int lastSep = filePath.lastIndexOf(File.separator);
-        if (lastPoi == -1 || lastSep >= lastPoi) return "";
-        return filePath.substring(lastPoi + 1);
-    }
-
-    private static String getImageType(final InputStream is) {
+    private static ImageType getImageType(final InputStream is) {
         if (is == null) return null;
         try {
-            byte[] bytes = new byte[8];
-            return is.read(bytes, 0, 8) != -1 ? getImageType(bytes) : null;
+            byte[] bytes = new byte[12];
+            return is.read(bytes) != -1 ? getImageType(bytes) : null;
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private static String getImageType(final byte[] bytes) {
-        if (isJPEG(bytes)) return "JPEG";
-        if (isGIF(bytes)) return "GIF";
-        if (isPNG(bytes)) return "PNG";
-        if (isBMP(bytes)) return "BMP";
-        return null;
+    private static ImageType getImageType(final byte[] bytes) {
+        String type = bytes2HexString(bytes).toUpperCase();
+        if (type.contains("FFD8FF")) {
+            return ImageType.TYPE_JPG;
+        } else if (type.contains("89504E47")) {
+            return ImageType.TYPE_PNG;
+        } else if (type.contains("47494638")) {
+            return ImageType.TYPE_GIF;
+        } else if (type.contains("49492A00") || type.contains("4D4D002A")) {
+            return ImageType.TYPE_TIFF;
+        } else if (type.contains("424D")) {
+            return ImageType.TYPE_BMP;
+        } else if (type.startsWith("52494646") && type.endsWith("57454250")) {//524946461c57000057454250-12个字节
+            return ImageType.TYPE_WEBP;
+        } else if (type.contains("00000100") || type.contains("00000200")) {
+            return ImageType.TYPE_ICO;
+        } else {
+            return ImageType.TYPE_UNKNOWN;
+        }
     }
+
+    private static final char[] hexDigits =
+            {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private static String bytes2HexString(final byte[] bytes) {
+        if (bytes == null) return "";
+        int len = bytes.length;
+        if (len <= 0) return "";
+        char[] ret = new char[len << 1];
+        for (int i = 0, j = 0; i < len; i++) {
+            ret[j++] = hexDigits[bytes[i] >> 4 & 0x0f];
+            ret[j++] = hexDigits[bytes[i] & 0x0f];
+        }
+        return new String(ret);
+    }
+
 
     private static boolean isJPEG(final byte[] b) {
         return b.length >= 2
@@ -1716,26 +1744,26 @@ public final class ImageUtils {
     }
 
     /**
-     * Return the compressed bitmap using quality.
+     * Return the compressed data using quality.
      *
      * @param src     The source of bitmap.
      * @param quality The quality.
-     * @return the compressed bitmap
+     * @return the compressed data using quality
      */
-    public static Bitmap compressByQuality(final Bitmap src,
+    public static byte[] compressByQuality(final Bitmap src,
                                            @IntRange(from = 0, to = 100) final int quality) {
         return compressByQuality(src, quality, false);
     }
 
     /**
-     * Return the compressed bitmap using quality.
+     * Return the compressed data using quality.
      *
      * @param src     The source of bitmap.
      * @param quality The quality.
      * @param recycle True to recycle the source of bitmap, false otherwise.
-     * @return the compressed bitmap
+     * @return the compressed data using quality
      */
-    public static Bitmap compressByQuality(final Bitmap src,
+    public static byte[] compressByQuality(final Bitmap src,
                                            @IntRange(from = 0, to = 100) final int quality,
                                            final boolean recycle) {
         if (isEmptyBitmap(src)) return null;
@@ -1743,32 +1771,32 @@ public final class ImageUtils {
         src.compress(Bitmap.CompressFormat.JPEG, quality, baos);
         byte[] bytes = baos.toByteArray();
         if (recycle && !src.isRecycled()) src.recycle();
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        return bytes;
     }
 
     /**
-     * Return the compressed bitmap using quality.
+     * Return the compressed data using quality.
      *
      * @param src         The source of bitmap.
      * @param maxByteSize The maximum size of byte.
-     * @return the compressed bitmap
+     * @return the compressed data using quality
      */
-    public static Bitmap compressByQuality(final Bitmap src, final long maxByteSize) {
+    public static byte[] compressByQuality(final Bitmap src, final long maxByteSize) {
         return compressByQuality(src, maxByteSize, false);
     }
 
     /**
-     * Return the compressed bitmap using quality.
+     * Return the compressed data using quality.
      *
      * @param src         The source of bitmap.
      * @param maxByteSize The maximum size of byte.
      * @param recycle     True to recycle the source of bitmap, false otherwise.
-     * @return the compressed bitmap
+     * @return the compressed data using quality
      */
-    public static Bitmap compressByQuality(final Bitmap src,
+    public static byte[] compressByQuality(final Bitmap src,
                                            final long maxByteSize,
                                            final boolean recycle) {
-        if (isEmptyBitmap(src) || maxByteSize <= 0) return null;
+        if (isEmptyBitmap(src) || maxByteSize <= 0) return new byte[0];
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         src.compress(CompressFormat.JPEG, 100, baos);
         byte[] bytes;
@@ -1805,7 +1833,7 @@ public final class ImageUtils {
             }
         }
         if (recycle && !src.isRecycled()) src.recycle();
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        return bytes;
     }
 
     /**
@@ -1913,7 +1941,7 @@ public final class ImageUtils {
      * @param maxHeight The maximum height.
      * @return the sample size
      */
-    private static int calculateInSampleSize(final BitmapFactory.Options options,
+    public static int calculateInSampleSize(final BitmapFactory.Options options,
                                              final int maxWidth,
                                              final int maxHeight) {
         int height = options.outHeight;
@@ -1980,6 +2008,34 @@ public final class ImageUtils {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public enum ImageType {
+        TYPE_JPG("jpg"),
+
+        TYPE_PNG("png"),
+
+        TYPE_GIF("gif"),
+
+        TYPE_TIFF("tiff"),
+
+        TYPE_BMP("bmp"),
+
+        TYPE_WEBP("webp"),
+
+        TYPE_ICO("ico"),
+
+        TYPE_UNKNOWN("unknown");
+
+        String value;
+
+        ImageType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
         }
     }
 }

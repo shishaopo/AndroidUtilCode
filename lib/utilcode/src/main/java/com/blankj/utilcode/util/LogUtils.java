@@ -25,9 +25,10 @@ import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.Retention;
@@ -36,10 +37,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -231,6 +235,21 @@ public final class LogUtils {
                 });
             }
         }
+    }
+
+    public static List<File> getLogFiles() {
+        String dir = CONFIG.getDir();
+        File logDir = new File(dir);
+        if (!logDir.exists()) return new ArrayList<>();
+        File[] files = logDir.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return isMatchLogFileName(name);
+            }
+        });
+        List<File> list = new ArrayList<>();
+        Collections.addAll(list, files);
+        return list;
     }
 
     private static TagHead processTagAndHead(String tag) {
@@ -527,7 +546,7 @@ public final class LogUtils {
         File[] files = parentFile.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.matches("^" + CONFIG.getFilePrefix() + "_[0-9]{4}_[0-9]{2}_[0-9]{2}_.*$");
+                return isMatchLogFileName(name);
             }
         });
         if (files == null || files.length <= 0) return;
@@ -553,6 +572,10 @@ public final class LogUtils {
         } catch (ParseException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean isMatchLogFileName(String name) {
+        return name.matches("^" + CONFIG.getFilePrefix() + "_[0-9]{4}_[0-9]{2}_[0-9]{2}_.*$");
     }
 
     private static String findDate(String str) {
@@ -608,7 +631,7 @@ public final class LogUtils {
         if (CONFIG.mFileWriter == null) {
             BufferedWriter bw = null;
             try {
-                bw = new BufferedWriter(new FileWriter(filePath, true));
+                bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath, true), "UTF-8"));
                 bw.write(input);
             } catch (IOException e) {
                 e.printStackTrace();

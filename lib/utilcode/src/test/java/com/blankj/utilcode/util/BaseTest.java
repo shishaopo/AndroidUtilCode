@@ -1,16 +1,13 @@
 package com.blankj.utilcode.util;
 
-
 import android.support.annotation.NonNull;
-
+import java.util.concurrent.Executor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
-
-import java.util.concurrent.Executor;
 
 /**
  * <pre>
@@ -21,7 +18,7 @@ import java.util.concurrent.Executor;
  * </pre>
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, shadows = {ShadowLog.class})
+@Config(manifest = Config.NONE, shadows = { ShadowLog.class })
 public class BaseTest {
 
     @BusUtils.Bus(tag = "base")
@@ -38,12 +35,10 @@ public class BaseTest {
             }
         });
         Utils.init(RuntimeEnvironment.application);
-        ReflectUtils getInstance = ReflectUtils.reflect(BusUtils.class).method("getInstance");
-        getInstance.method("registerBus", "base", BaseTest.class.getName(), "noParamFun", "int", "i", false, "POSTING");
     }
 
     @Test
     public void test() throws Exception {
-
     }
+
 }

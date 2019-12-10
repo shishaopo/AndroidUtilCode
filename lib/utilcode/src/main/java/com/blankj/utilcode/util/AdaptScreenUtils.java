@@ -8,10 +8,21 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * <pre>
+ *     author: Blankj
+ *     blog  : http://blankj.com
+ *     time  : 2018/11/15
+ *     desc  : utils about adapt screen
+ * </pre>
+ */
 public final class AdaptScreenUtils {
 
     private static List<Field> sMetricsFields;
+
+    private AdaptScreenUtils() {
+        throw new UnsupportedOperationException("u can't instantiate me...");
+    }
 
     /**
      * Adapt for the horizontal screen, and call it in {@link android.app.Activity#getResources()}.
@@ -85,6 +96,10 @@ public final class AdaptScreenUtils {
         resources.getDisplayMetrics().xdpi = newXdpi;
         Utils.getApp().getResources().getDisplayMetrics().xdpi = newXdpi;
         applyOtherDisplayMetrics(resources, newXdpi);
+    }
+
+    static void preLoad() {
+        applyDisplayMetrics(Resources.getSystem(), Resources.getSystem().getDisplayMetrics().xdpi);
     }
 
     private static void applyOtherDisplayMetrics(final Resources resources, final float newXdpi) {

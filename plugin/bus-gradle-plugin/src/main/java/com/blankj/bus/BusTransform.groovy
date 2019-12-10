@@ -7,6 +7,8 @@ import com.blankj.bus.util.LogUtils
 import org.apache.commons.io.FileUtils
 import org.gradle.api.Project
 
+import java.util.regex.Pattern
+
 class BusTransform extends Transform {
 
     Project mProject;
@@ -87,7 +89,7 @@ class BusTransform extends Transform {
                 )
                 FileUtils.copyFile(jar, dest)
 
-                if (jumpScan(jarName)) {
+                if (jumpScan(jarName, ext)) {
                     LogUtils.l("jump jar: $jarName -> $dest")
                     return
                 }
@@ -101,22 +103,32 @@ class BusTransform extends Transform {
             if (busScan.busMap.isEmpty()) {
                 LogUtils.l("no bus.")
             } else {
-                Map<String, String> rightBus = [:]
-                Map wrongBus = [:]
                 busScan.busMap.each { String tag, List<BusInfo> infoList ->
-                    if (infoList.size() == 1) {
-                        BusInfo busInfo = infoList.get(0)
-                        if (busInfo.isParamSizeNoMoreThanOne) {
-                            rightBus.put(tag, busInfo.toString())
+                    infoList.sort(new Comparator<BusInfo>() {
+                        @Override
+                        int compare(BusInfo t0, BusInfo t1) {
+                            return t1.priority - t0.priority
+                        }
+                    })
+                }
+
+                Map<String, List<String>> rightBus = [:]
+                Map<String, List<String>> wrongBus = [:]
+                busScan.busMap.each { String tag, List<BusInfo> infoList ->
+                    List<String> rightInfoString = []
+                    List<String> wrongInfoString = []
+                    infoList.each { BusInfo info ->
+                        if (info.isParamSizeNoMoreThanOne) {
+                            rightInfoString.add(info.toString())
                         } else {
-                            wrongBus.put(tag, busInfo.toString())
+                            wrongInfoString.add(info.toString())
                         }
-                    } else {
-                        List<String> infoString = []
-                        infoList.each { BusInfo info ->
-                            infoString.add(info.toString())
-                        }
-                        wrongBus.put(tag, infoString)
+                    }
+                    if (!rightInfoString.isEmpty()) {
+                        rightBus.put(tag, rightInfoString)
+                    }
+                    if (!wrongInfoString.isEmpty()) {
+                        wrongBus.put(tag, wrongInfoString)
                     }
                 }
                 Map busDetails = [:]
@@ -143,14 +155,26 @@ class BusTransform extends Transform {
         LogUtils.l(getName() + " finished: " + (System.currentTimeMillis() - stTime) + "ms")
     }
 
-    private static jumpScan(String jarName) {
-        boolean isExcept = false
-        for (String except : Config.EXCEPTS) {
-            if (jarName.startsWith(except)) {
-                isExcept = true
-                break
+    private static jumpScan(String jarName, BusExtension ext) {
+        if (jarName.contains("utilcode")) {
+            return false
+        }
+
+        if (ext.onlyScanLibRegex != null && ext.onlyScanLibRegex.trim().length() > 0) {
+            return !Pattern.matches(ext.onlyScanLibRegex, jarName)
+        }
+
+        if (ext.jumpScanLibRegex != null && ext.jumpScanLibRegex.trim().length() > 0) {
+            if (Pattern.matches(ext.jumpScanLibRegex, jarName)) {
+                return true
             }
         }
-        return isExcept
+
+        for (exclude in Config.EXCLUDE_LIBS_START_WITH) {
+            if (jarName.startsWith(exclude)) {
+                return true
+            }
+        }
+        return false
     }
 }

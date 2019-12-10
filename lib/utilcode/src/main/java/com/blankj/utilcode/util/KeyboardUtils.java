@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.res.Resources;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -28,6 +29,8 @@ import android.widget.FrameLayout;
  * </pre>
  */
 public final class KeyboardUtils {
+
+    private static final int TAG_ON_GLOBAL_LAYOUT_LISTENER = -8;
 
     private KeyboardUtils() {
         throw new UnsupportedOperationException("u can't instantiate me...");
@@ -108,15 +111,7 @@ public final class KeyboardUtils {
         InputMethodManager imm =
                 (InputMethodManager) Utils.getApp().getSystemService(Context.INPUT_METHOD_SERVICE);
         if (imm == null) return;
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0, new ResultReceiver(new Handler()) {
-            @Override
-            protected void onReceiveResult(int resultCode, Bundle resultData) {
-                if (resultCode == InputMethodManager.RESULT_UNCHANGED_SHOWN
-                        || resultCode == InputMethodManager.RESULT_SHOWN) {
-                    toggleSoftInput();
-                }
-            }
-        });
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     /**
@@ -143,7 +138,6 @@ public final class KeyboardUtils {
 
     private static int getDecorViewInvisibleHeight(@NonNull final Window window) {
         final View decorView = window.getDecorView();
-        if (decorView == null) return 0;
         final Rect outRect = new Rect();
         decorView.getWindowVisibleDisplayFrame(outRect);
         Log.d("KeyboardUtils", "getDecorViewInvisibleHeight: "
@@ -181,17 +175,33 @@ public final class KeyboardUtils {
         }
         final FrameLayout contentView = window.findViewById(android.R.id.content);
         final int[] decorViewInvisibleHeightPre = {getDecorViewInvisibleHeight(window)};
-        contentView.getViewTreeObserver()
-                .addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        int height = getDecorViewInvisibleHeight(window);
-                        if (decorViewInvisibleHeightPre[0] != height) {
-                            listener.onSoftInputChanged(height);
-                            decorViewInvisibleHeightPre[0] = height;
-                        }
-                    }
-                });
+        OnGlobalLayoutListener onGlobalLayoutListener = new OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                int height = getDecorViewInvisibleHeight(window);
+                if (decorViewInvisibleHeightPre[0] != height) {
+                    listener.onSoftInputChanged(height);
+                    decorViewInvisibleHeightPre[0] = height;
+                }
+            }
+        };
+        contentView.getViewTreeObserver().addOnGlobalLayoutListener(onGlobalLayoutListener);
+        contentView.setTag(TAG_ON_GLOBAL_LAYOUT_LISTENER, onGlobalLayoutListener);
+    }
+
+    /**
+     * Unregister soft input changed listener.
+     *
+     * @param window The window.
+     */
+    public static void unregisterSoftInputChangedListener(@NonNull final Window window) {
+        final FrameLayout contentView = window.findViewById(android.R.id.content);
+        Object tag = contentView.getTag(TAG_ON_GLOBAL_LAYOUT_LISTENER);
+        if (tag instanceof OnGlobalLayoutListener) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                contentView.getViewTreeObserver().removeOnGlobalLayoutListener((OnGlobalLayoutListener) tag);
+            }
+        }
     }
 
     /**
@@ -279,11 +289,7 @@ public final class KeyboardUtils {
             if (ev.getAction() == MotionEvent.ACTION_DOWN) {
                 View v = getCurrentFocus();
                 if (isShouldHideKeyboard(v, ev)) {
-                    InputMethodManager imm =
-                            (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(v.getWindowToken(),
-                            InputMethodManager.HIDE_NOT_ALWAYS
-                    );
+                    KeyboardUtils.hideSoftInput(this);
                 }
             }
             return super.dispatchTouchEvent(ev);
@@ -291,15 +297,15 @@ public final class KeyboardUtils {
 
         // Return whether touch the view.
         private boolean isShouldHideKeyboard(View v, MotionEvent event) {
-            if (v != null && (v instanceof EditText)) {
+            if ((v instanceof EditText)) {
                 int[] l = {0, 0};
-                v.getLocationInWindow(l);
+                v.getLocationOnScreen(l);
                 int left = l[0],
                         top = l[1],
                         bottom = top + v.getHeight(),
                         right = left + v.getWidth();
-                return !(event.getX() > left && event.getX() < right
-                        && event.getY() > top && event.getY() < bottom);
+                return !(event.getRawX() > left && event.getRawX() < right
+                        && event.getRawY() > top && event.getRawY() < bottom);
             }
             return false;
         }
