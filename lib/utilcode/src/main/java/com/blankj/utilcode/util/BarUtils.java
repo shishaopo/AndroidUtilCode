@@ -3,11 +3,11 @@ package com.blankj.utilcode.util;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
@@ -272,7 +272,7 @@ public final class BarUtils {
     public static void setStatusBarColor(@NonNull final View fakeStatusBar,
                                          @ColorInt final int color) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return;
-        Activity activity = getActivityByView(fakeStatusBar);
+        Activity activity = UtilsBridge.getActivityByContext(fakeStatusBar.getContext());
         if (activity == null) return;
         transparentStatusBar(activity);
         fakeStatusBar.setVisibility(View.VISIBLE);
@@ -289,7 +289,7 @@ public final class BarUtils {
      */
     public static void setStatusBarCustom(@NonNull final View fakeStatusBar) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return;
-        Activity activity = getActivityByView(fakeStatusBar);
+        Activity activity = UtilsBridge.getActivityByContext(fakeStatusBar.getContext());
         if (activity == null) return;
         transparentStatusBar(activity);
         fakeStatusBar.setVisibility(View.VISIBLE);
@@ -334,7 +334,7 @@ public final class BarUtils {
                                                 @ColorInt final int color,
                                                 final boolean isTop) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return;
-        Activity activity = getActivityByView(fakeStatusBar);
+        Activity activity = UtilsBridge.getActivityByContext(fakeStatusBar.getContext());
         if (activity == null) return;
         transparentStatusBar(activity);
         drawer.setFitsSystemWindows(false);
@@ -517,9 +517,7 @@ public final class BarUtils {
             final View child = decorView.getChildAt(i);
             final int id = child.getId();
             if (id != View.NO_ID) {
-                String resourceEntryName = Utils.getApp()
-                        .getResources()
-                        .getResourceEntryName(id);
+                String resourceEntryName = getResNameById(id);
                 if ("navigationBarBackground".equals(resourceEntryName)) {
                     child.setVisibility(isVisible ? View.VISIBLE : View.INVISIBLE);
                 }
@@ -560,9 +558,7 @@ public final class BarUtils {
             final View child = decorView.getChildAt(i);
             final int id = child.getId();
             if (id != View.NO_ID) {
-                String resourceEntryName = Utils.getApp()
-                        .getResources()
-                        .getResourceEntryName(id);
+                String resourceEntryName = getResNameById(id);
                 if ("navigationBarBackground".equals(resourceEntryName)
                         && child.getVisibility() == View.VISIBLE) {
                     isVisible = true;
@@ -571,10 +567,31 @@ public final class BarUtils {
             }
         }
         if (isVisible) {
+            // 对于三星手机，android10以下非OneUI2的版本，比如 s8，note8 等设备上，
+            // 导航栏显示存在bug："当用户隐藏导航栏时显示输入法的时候导航栏会跟随显示"，会导致隐藏输入法之后判断错误
+            // 这个问题在 OneUI 2 & android 10 版本已修复
+            if (UtilsBridge.isSamsung()
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1
+                    && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                try {
+                    return Settings.Global.getInt(Utils.getApp().getContentResolver(), "navigationbar_hide_bar_enabled") == 0;
+                } catch (Exception ignore) {
+                }
+            }
+
             int visibility = decorView.getSystemUiVisibility();
             isVisible = (visibility & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
         }
+
         return isVisible;
+    }
+
+    private static String getResNameById(int id) {
+        try {
+            return Utils.getApp().getResources().getResourceEntryName(id);
+        } catch (Exception ignore) {
+            return "";
+        }
     }
 
     /**
@@ -651,7 +668,7 @@ public final class BarUtils {
      */
     public static void setNavBarLightMode(@NonNull final Activity activity,
                                           final boolean isLightMode) {
-        setStatusBarLightMode(activity.getWindow(), isLightMode);
+        setNavBarLightMode(activity.getWindow(), isLightMode);
     }
 
     /**
@@ -681,7 +698,7 @@ public final class BarUtils {
      * @return {@code true}: yes<br>{@code false}: no
      */
     public static boolean isNavBarLightMode(@NonNull final Activity activity) {
-        return isStatusBarLightMode(activity.getWindow());
+        return isNavBarLightMode(activity.getWindow());
     }
 
     /**
@@ -697,17 +714,5 @@ public final class BarUtils {
             return (vis & View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR) != 0;
         }
         return false;
-    }
-
-    private static Activity getActivityByView(@NonNull final View view) {
-        Context context = view.getContext();
-        while (context instanceof ContextWrapper) {
-            if (context instanceof Activity) {
-                return (Activity) context;
-            }
-            context = ((ContextWrapper) context).getBaseContext();
-        }
-        Log.e("BarUtils", "the view's Context is not an Activity.");
-        return null;
     }
 }

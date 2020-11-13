@@ -1,12 +1,17 @@
 package com.blankj.utilcode.util;
 
-
-import android.util.Log;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * <pre>
+ *     author: Blankj
+ *     blog  : http://blankj.com
+ *     time  : 2019/01/07
+ *     desc  : utils about json
+ * </pre>
+ */
 public final class JsonUtils {
 
     private static final byte TYPE_BOOLEAN     = 0x00;
@@ -184,7 +189,7 @@ public final class JsonUtils {
             //noinspection unchecked
             return (T) ret;
         } catch (JSONException e) {
-            Log.e("JsonUtils", "getValueByType: ", e);
+            e.printStackTrace();
             return defaultValue;
         }
     }
@@ -200,7 +205,7 @@ public final class JsonUtils {
         try {
             return getValueByType(new JSONObject(json), key, defaultValue, type);
         } catch (JSONException e) {
-            Log.e("JsonUtils", "getValueByType: ", e);
+            e.printStackTrace();
             return defaultValue;
         }
     }

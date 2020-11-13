@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -112,10 +113,10 @@ public final class DeviceUtils {
      *
      * @return the MAC address
      */
-    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET, CHANGE_WIFI_STATE})
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, CHANGE_WIFI_STATE})
     public static String getMacAddress() {
         String macAddress = getMacAddress((String[]) null);
-        if (!macAddress.equals("") || getWifiEnabled()) return macAddress;
+        if (!TextUtils.isEmpty(macAddress) || getWifiEnabled()) return macAddress;
         setWifiEnabled(true);
         setWifiEnabled(false);
         return getMacAddress((String[]) null);
@@ -150,7 +151,7 @@ public final class DeviceUtils {
      *
      * @return the MAC address
      */
-    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET})
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE})
     public static String getMacAddress(final String... excepts) {
         String macAddress = getMacAddressByNetworkInterface();
         if (isAddressNotInExcepts(macAddress, excepts)) {
@@ -172,25 +173,37 @@ public final class DeviceUtils {
     }
 
     private static boolean isAddressNotInExcepts(final String address, final String... excepts) {
+        if (TextUtils.isEmpty(address)) {
+            return false;
+        }
+        if ("02:00:00:00:00:00".equals(address)) {
+            return false;
+        }
         if (excepts == null || excepts.length == 0) {
-            return !"02:00:00:00:00:00".equals(address);
+            return true;
         }
         for (String filter : excepts) {
-            if (address.equals(filter)) {
+            if (filter != null && filter.equals(address)) {
                 return false;
             }
         }
         return true;
     }
 
-    @SuppressLint({"MissingPermission", "HardwareIds"})
+    @RequiresPermission(ACCESS_WIFI_STATE)
     private static String getMacAddressByWifiInfo() {
         try {
             final WifiManager wifi = (WifiManager) Utils.getApp()
                     .getApplicationContext().getSystemService(WIFI_SERVICE);
             if (wifi != null) {
                 final WifiInfo info = wifi.getConnectionInfo();
-                if (info != null) return info.getMacAddress();
+                if (info != null) {
+                    @SuppressLint("HardwareIds")
+                    String macAddress = info.getMacAddress();
+                    if (!TextUtils.isEmpty(macAddress)) {
+                        return macAddress;
+                    }
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -264,11 +277,11 @@ public final class DeviceUtils {
     }
 
     private static String getMacAddressByFile() {
-        ShellUtils.CommandResult result = ShellUtils.execCmd("getprop wifi.interface", false);
+        ShellUtils.CommandResult result = UtilsBridge.execCmd("getprop wifi.interface", false);
         if (result.result == 0) {
             String name = result.successMsg;
             if (name != null) {
-                result = ShellUtils.execCmd("cat /sys/class/net/" + name + "/address", false);
+                result = UtilsBridge.execCmd("cat /sys/class/net/" + name + "/address", false);
                 if (result.result == 0) {
                     String address = result.successMsg;
                     if (address != null && address.length() > 0) {
@@ -329,7 +342,7 @@ public final class DeviceUtils {
      * @return {@code true}: yes<br>{@code false}: no
      */
     public static boolean isTablet() {
-        return (Utils.getApp().getResources().getConfiguration().screenLayout
+        return (Resources.getSystem().getConfiguration().screenLayout
                 & Configuration.SCREENLAYOUT_SIZE_MASK)
                 >= Configuration.SCREENLAYOUT_SIZE_LARGE;
     }
@@ -375,6 +388,19 @@ public final class DeviceUtils {
         return false;
     }
 
+    /**
+     * Whether user has enabled development settings.
+     *
+     * @return whether user has enabled development settings.
+     */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    public static boolean isDevelopmentSettingsEnabled() {
+        return Settings.Global.getInt(
+                Utils.getApp().getContentResolver(),
+                Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
+        ) > 0;
+    }
+
 
     private static final    String KEY_UDID = "KEY_UDID";
     private volatile static String udid;
@@ -387,9 +413,8 @@ public final class DeviceUtils {
      *
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId() {
-        return getUniqueDeviceId("");
+        return getUniqueDeviceId("", true);
     }
 
     /**
@@ -401,40 +426,79 @@ public final class DeviceUtils {
      * @param prefix The prefix of the unique device id.
      * @return the unique device id
      */
-    @SuppressLint({"MissingPermission", "HardwareIds"})
     public static String getUniqueDeviceId(String prefix) {
+        return getUniqueDeviceId(prefix, true);
+    }
+
+    /**
+     * Return the unique device id.
+     * <pre>{1}{UUID(macAddress)}</pre>
+     * <pre>{2}{UUID(androidId )}</pre>
+     * <pre>{9}{UUID(random    )}</pre>
+     *
+     * @param useCache True to use cache, false otherwise.
+     * @return the unique device id
+     */
+    public static String getUniqueDeviceId(boolean useCache) {
+        return getUniqueDeviceId("", useCache);
+    }
+
+    /**
+     * Return the unique device id.
+     * <pre>android 10 deprecated {prefix}{1}{UUID(macAddress)}</pre>
+     * <pre>{prefix}{2}{UUID(androidId )}</pre>
+     * <pre>{prefix}{9}{UUID(random    )}</pre>
+     *
+     * @param prefix   The prefix of the unique device id.
+     * @param useCache True to use cache, false otherwise.
+     * @return the unique device id
+     */
+    public static String getUniqueDeviceId(String prefix, boolean useCache) {
+        if (!useCache) {
+            return getUniqueDeviceIdReal(prefix);
+        }
         if (udid == null) {
             synchronized (DeviceUtils.class) {
                 if (udid == null) {
-                    final String id = Utils.getSpUtils4Utils().getString(KEY_UDID, null);
+                    final String id = UtilsBridge.getSpUtils4Utils().getString(KEY_UDID, null);
                     if (id != null) {
                         udid = id;
                         return udid;
                     }
-                    try {
-                        final String androidId = getAndroidID();
-                        if (!TextUtils.isEmpty(androidId)) {
-                            return saveUdid(prefix + 2, androidId);
-                        }
-
-                    } catch (Exception ignore) {/**/}
-                    return saveUdid(prefix + 9, "");
+                    return getUniqueDeviceIdReal(prefix);
                 }
             }
         }
         return udid;
     }
 
-    @SuppressLint({"MissingPermission", "HardwareIds"})
+    private static String getUniqueDeviceIdReal(String prefix) {
+        try {
+            final String androidId = getAndroidID();
+            if (!TextUtils.isEmpty(androidId)) {
+                return saveUdid(prefix + 2, androidId);
+            }
+
+        } catch (Exception ignore) {/**/}
+        return saveUdid(prefix + 9, "");
+    }
+
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET, CHANGE_WIFI_STATE})
     public static boolean isSameDevice(final String uniqueDeviceId) {
         // {prefix}{type}{32id}
         if (TextUtils.isEmpty(uniqueDeviceId) && uniqueDeviceId.length() < 33) return false;
         if (uniqueDeviceId.equals(udid)) return true;
-        final String cachedId = Utils.getSpUtils4Utils().getString(KEY_UDID, null);
+        final String cachedId = UtilsBridge.getSpUtils4Utils().getString(KEY_UDID, null);
         if (uniqueDeviceId.equals(cachedId)) return true;
         int st = uniqueDeviceId.length() - 33;
         String type = uniqueDeviceId.substring(st, st + 1);
-        if (type.startsWith("2")) {
+        if (type.startsWith("1")) {
+            String macAddress = getMacAddress();
+            if (macAddress.equals("")) {
+                return false;
+            }
+            return uniqueDeviceId.substring(st + 1).equals(getUdid("", macAddress));
+        } else if (type.startsWith("2")) {
             final String androidId = getAndroidID();
             if (TextUtils.isEmpty(androidId)) {
                 return false;
@@ -446,7 +510,7 @@ public final class DeviceUtils {
 
     private static String saveUdid(String prefix, String id) {
         udid = getUdid(prefix, id);
-        SPUtils.getInstance().put(KEY_UDID, udid);
+        UtilsBridge.getSpUtils4Utils().put(KEY_UDID, udid);
         return udid;
     }
 

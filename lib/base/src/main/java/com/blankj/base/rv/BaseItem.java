@@ -9,6 +9,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.util.List;
+
 /**
  * <pre>
  *     author: Blankj
@@ -35,6 +37,9 @@ public abstract class BaseItem<T extends BaseItem> {
     }
 
     public abstract void bind(@NonNull final ItemViewHolder holder, final int position);
+
+    public void partialUpdate(List<Object> payloads) {
+    }
 
     void bindViewHolder(@NonNull final ItemViewHolder holder, final int position) {
         if (mOnItemClickListener != null) {
@@ -113,8 +118,17 @@ public abstract class BaseItem<T extends BaseItem> {
     }
 
     public void update() {
+        if (getAdapter() == null) return;
         //noinspection unchecked
         getAdapter().updateItem((T) this);
+    }
+
+    public List<T> getItems() {
+        return getAdapter().getItems();
+    }
+
+    public int getCount() {
+        return getAdapter().getItemCount();
     }
 
     public int getIndex() {

@@ -2,7 +2,6 @@ package com.blankj.utilcode.util;
 
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -98,7 +97,16 @@ public final class AdaptScreenUtils {
         applyOtherDisplayMetrics(resources, newXdpi);
     }
 
-    static void preLoad() {
+    static Runnable getPreLoadRunnable() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                preLoad();
+            }
+        };
+    }
+
+    private static void preLoad() {
         applyDisplayMetrics(Resources.getSystem(), Resources.getSystem().getDisplayMetrics().xdpi);
     }
 
@@ -136,7 +144,7 @@ public final class AdaptScreenUtils {
                 DisplayMetrics dm = (DisplayMetrics) metricsField.get(resources);
                 if (dm != null) dm.xdpi = newXdpi;
             } catch (Exception e) {
-                Log.e("AdaptScreenUtils", "applyMetricsFields: " + e);
+                e.printStackTrace();
             }
         }
     }
@@ -144,8 +152,7 @@ public final class AdaptScreenUtils {
     private static DisplayMetrics getMetricsFromField(final Resources resources, final Field field) {
         try {
             return (DisplayMetrics) field.get(resources);
-        } catch (Exception e) {
-            Log.e("AdaptScreenUtils", "getMetricsFromField: " + e);
+        } catch (Exception ignore) {
             return null;
         }
     }

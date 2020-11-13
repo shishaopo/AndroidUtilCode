@@ -4,6 +4,7 @@
     <!-- app -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <!-- bar -->
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
@@ -17,6 +18,7 @@
     <uses-permission android:name="android.permission.FLASHLIGHT" />
 
     <!-- network -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -139,7 +141,15 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:launchMode="singleTop" />
         <activity
+            android:name=".feature.clipboard.ClipboardActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTop" />
+        <activity
             android:name=".feature.device.DeviceActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".feature.file.FileActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:launchMode="singleTop" />
         <activity
@@ -152,6 +162,10 @@
             android:launchMode="singleTop" />
         <activity
             android:name=".feature.image.ImageActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".feature.intent.IntentActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:launchMode="singleTop" />
         <activity
@@ -181,7 +195,7 @@
             android:launchMode="singleTop">
             <meta-data
                 android:name="activity_meta_data"
-                android:value="ActivityMetaData" />
+                android:value="D1234567890123456789012345678901234567890" />
         </activity>
         <activity
             android:name=".feature.mvp.MvpActivity"
@@ -248,10 +262,17 @@
             android:launchMode="singleTop" />
         <activity
             android:name=".feature.toast.ToastActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
+            android:name=".feature.uiMessage.UiMessageActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:launchMode="singleTop" />
         <activity
             android:name=".feature.vibrate.VibrateActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".feature.volume.VolumeActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:launchMode="singleTop" />
 

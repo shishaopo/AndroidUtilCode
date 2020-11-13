@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.blankj.common.activity.CommonActivity
-import com.blankj.common.activity.CommonActivityItemsView
-import com.blankj.common.activity.CommonActivityTitleView
 import com.blankj.common.item.CommonItem
 import com.blankj.common.item.CommonItemTitle
 import com.blankj.utilcode.pkg.R
@@ -48,6 +46,9 @@ class DeviceActivity : CommonActivity() {
             add(CommonItemTitle("getABIs", Arrays.asList(*DeviceUtils.getABIs()).toString()))
             add(CommonItemTitle("isTablet", DeviceUtils.isTablet().toString()))
             add(CommonItemTitle("isEmulator", DeviceUtils.isEmulator().toString()))
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                add(CommonItemTitle("isDevelopmentSettingsEnabled", DeviceUtils.isDevelopmentSettingsEnabled().toString()))
+            }
             add(CommonItemTitle("getUniqueDeviceId", DeviceUtils.getUniqueDeviceId("util")))
             add(CommonItemTitle("isSameDevice", DeviceUtils.isSameDevice(DeviceUtils.getUniqueDeviceId()).toString()))
         }

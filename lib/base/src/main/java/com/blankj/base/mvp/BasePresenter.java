@@ -1,12 +1,7 @@
 package com.blankj.base.mvp;
 
-import android.arch.lifecycle.Lifecycle;
-import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.OnLifecycleEvent;
 import android.support.annotation.CallSuper;
-
-import com.blankj.utilcode.util.LogUtils;
+import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,16 +14,19 @@ import java.util.Map;
  *     desc  :
  * </pre>
  */
-public abstract class BasePresenter<V extends BaseView> implements LifecycleObserver {
+public abstract class BasePresenter<V extends BaseView> {
 
-    private V                     mView;
-    private Map<Class, BaseModel> mModelMap = new HashMap<>();
+    private static final String TAG = BaseView.TAG;
 
-    public abstract void onAttachView();
+    private V                                          mView;
+    private Map<Class<? extends BaseModel>, BaseModel> mModelMap = new HashMap<>();
+    private boolean                                    isAlive   = true;
+
+    public abstract void onBindView();
 
     void bindView(V view) {
         this.mView = view;
-        onAttachView();
+        onBindView();
     }
 
     public V getView() {
@@ -44,34 +42,29 @@ public abstract class BasePresenter<V extends BaseView> implements LifecycleObse
         try {
             M model = modelClass.newInstance();
             mModelMap.put(modelClass, model);
-            model.onCreateModel();
+            model.onCreate();
             return model;
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.e("BasePresenter", "getModel", e);
         } catch (InstantiationException e) {
-            e.printStackTrace();
+            Log.e("BasePresenter", "getModel", e);
         }
         return null;
     }
 
     @CallSuper
-    @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-    public void onDestroyPresenter() {
-        if (mView != null) {
-            mView.mPresenterMap.remove(this.getClass());
-            mView.onDestroyView();
-        }
+    public void onDestroy() {
+        Log.i(TAG, "destroy presenter: " + getClass().getSimpleName());
+        isAlive = false;
         for (BaseModel model : mModelMap.values()) {
             if (model != null) {
-                model.destroy();
+                model.onDestroy();
             }
         }
         mModelMap.clear();
-        LogUtils.e("onDestroyPresenter");
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_ANY)
-    public void onLifecycleChanged(LifecycleOwner owner, Lifecycle.Event event) {
-        LogUtils.e(event.toString());
+    public boolean isAlive() {
+        return isAlive;
     }
 }

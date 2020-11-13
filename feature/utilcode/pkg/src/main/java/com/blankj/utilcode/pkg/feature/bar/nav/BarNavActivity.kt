@@ -42,22 +42,14 @@ class BarNavActivity : CommonActivity() {
             if (BarUtils.isSupportNavBar()) {
                 add(CommonItemSwitch(
                         R.string.bar_nav_visibility,
-                        Utils.Func1 {
-                            BarUtils.isNavBarVisible(this@BarNavActivity)
-                        },
-                        Utils.Func1 {
-                            BarUtils.setNavBarVisibility(this@BarNavActivity, it)
-                        }
+                        { BarUtils.isNavBarVisible(this@BarNavActivity) },
+                        { BarUtils.setNavBarVisibility(this@BarNavActivity, it) }
                 ))
 
                 add(CommonItemSwitch(
                         R.string.bar_nav_light_mode,
-                        Utils.Func1 {
-                            BarUtils.isNavBarLightMode(this@BarNavActivity)
-                        },
-                        Utils.Func1 {
-                            BarUtils.setNavBarLightMode(this@BarNavActivity, it)
-                        }
+                        { BarUtils.isNavBarLightMode(this@BarNavActivity) },
+                        { BarUtils.setNavBarLightMode(this@BarNavActivity, it) }
                 ))
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

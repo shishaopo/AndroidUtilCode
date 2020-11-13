@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -14,7 +16,6 @@ import android.support.annotation.RequiresPermission;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.text.format.Formatter;
-import android.util.Log;
 
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -22,12 +23,18 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArraySet;
 
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.ACCESS_WIFI_STATE;
 import static android.Manifest.permission.CHANGE_WIFI_STATE;
@@ -51,6 +58,7 @@ public final class NetworkUtils {
     public enum NetworkType {
         NETWORK_ETHERNET,
         NETWORK_WIFI,
+        NETWORK_5G,
         NETWORK_4G,
         NETWORK_3G,
         NETWORK_2G,
@@ -84,12 +92,12 @@ public final class NetworkUtils {
      * Return whether network is available.
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     @RequiresPermission(INTERNET)
-    public static Utils.Task<Boolean> isAvailableAsync(@NonNull final Utils.Callback<Boolean> callback) {
-        return Utils.doAsync(new Utils.Task<Boolean>(callback) {
+    public static Utils.Task<Boolean> isAvailableAsync(@NonNull final Utils.Consumer<Boolean> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<Boolean>(consumer) {
             @RequiresPermission(INTERNET)
             @Override
             public Boolean doInBackground() {
@@ -114,11 +122,11 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      * <p>The default ping ip: 223.5.5.5</p>
      *
-     * @param callback The callback.
+     * @param consumer The consumer.
      */
     @RequiresPermission(INTERNET)
-    public static void isAvailableByPingAsync(final Utils.Callback<Boolean> callback) {
-        isAvailableByPingAsync("", callback);
+    public static void isAvailableByPingAsync(final Utils.Consumer<Boolean> consumer) {
+        isAvailableByPingAsync("", consumer);
     }
 
     /**
@@ -126,13 +134,13 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
      * @param ip       The ip address.
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     @RequiresPermission(INTERNET)
     public static Utils.Task<Boolean> isAvailableByPingAsync(final String ip,
-                                                             @NonNull final Utils.Callback<Boolean> callback) {
-        return Utils.doAsync(new Utils.Task<Boolean>(callback) {
+                                                             @NonNull final Utils.Consumer<Boolean> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<Boolean>(consumer) {
             @RequiresPermission(INTERNET)
             @Override
             public Boolean doInBackground() {
@@ -171,11 +179,11 @@ public final class NetworkUtils {
      * Return whether network is available using domain.
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
-     * @param callback The callback.
+     * @param consumer The consumer.
      */
     @RequiresPermission(INTERNET)
-    public static void isAvailableByDnsAsync(final Utils.Callback<Boolean> callback) {
-        isAvailableByDnsAsync("", callback);
+    public static void isAvailableByDnsAsync(final Utils.Consumer<Boolean> consumer) {
+        isAvailableByDnsAsync("", consumer);
     }
 
     /**
@@ -183,13 +191,13 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
      * @param domain   The name of domain.
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     @RequiresPermission(INTERNET)
     public static Utils.Task isAvailableByDnsAsync(final String domain,
-                                                   @NonNull final Utils.Callback<Boolean> callback) {
-        return Utils.doAsync(new Utils.Task<Boolean>(callback) {
+                                                   @NonNull final Utils.Consumer<Boolean> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<Boolean>(consumer) {
             @RequiresPermission(INTERNET)
             @Override
             public Boolean doInBackground() {
@@ -225,8 +233,8 @@ public final class NetworkUtils {
             return inetAddress != null;
         } catch (UnknownHostException e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     /**
@@ -249,7 +257,7 @@ public final class NetworkUtils {
                 return (boolean) getMobileDataEnabledMethod.invoke(tm);
             }
         } catch (Exception e) {
-            Log.e("NetworkUtils", "getMobileDataEnabled: ", e);
+            e.printStackTrace();
         }
         return false;
     }
@@ -280,6 +288,20 @@ public final class NetworkUtils {
         return info != null
                 && info.isAvailable()
                 && info.getSubtype() == TelephonyManager.NETWORK_TYPE_LTE;
+    }
+
+    /**
+     * Return whether using 4G.
+     * <p>Must hold {@code <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />}</p>
+     *
+     * @return {@code true}: yes<br>{@code false}: no
+     */
+    @RequiresPermission(ACCESS_NETWORK_STATE)
+    public static boolean is5G() {
+        NetworkInfo info = getActiveNetworkInfo();
+        return info != null
+                && info.isAvailable()
+                && info.getSubtype() == TelephonyManager.NETWORK_TYPE_NR;
     }
 
     /**
@@ -343,12 +365,12 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />},
      * {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET})
-    public static Utils.Task<Boolean> isWifiAvailableAsync(@NonNull final Utils.Callback<Boolean> callback) {
-        return Utils.doAsync(new Utils.Task<Boolean>(callback) {
+    public static Utils.Task<Boolean> isWifiAvailableAsync(@NonNull final Utils.Consumer<Boolean> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<Boolean>(consumer) {
             @RequiresPermission(allOf = {ACCESS_WIFI_STATE, INTERNET})
             @Override
             public Boolean doInBackground() {
@@ -419,6 +441,8 @@ public final class NetworkUtils {
                     case TelephonyManager.NETWORK_TYPE_LTE:
                         return NetworkType.NETWORK_4G;
 
+                    case TelephonyManager.NETWORK_TYPE_NR:
+                        return NetworkType.NETWORK_5G;
                     default:
                         String subtypeName = info.getSubtypeName();
                         if (subtypeName.equalsIgnoreCase("TD-SCDMA")
@@ -468,12 +492,12 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
      * @param useIPv4  True to use ipv4, false otherwise.
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     public static Utils.Task<String> getIPAddressAsync(final boolean useIPv4,
-                                                       @NonNull final Utils.Callback<String> callback) {
-        return Utils.doAsync(new Utils.Task<String>(callback) {
+                                                       @NonNull final Utils.Consumer<String> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<String>(consumer) {
             @RequiresPermission(INTERNET)
             @Override
             public String doInBackground() {
@@ -557,13 +581,13 @@ public final class NetworkUtils {
      * <p>Must hold {@code <uses-permission android:name="android.permission.INTERNET" />}</p>
      *
      * @param domain   The name of domain.
-     * @param callback The callback.
+     * @param consumer The consumer.
      * @return the task
      */
     @RequiresPermission(INTERNET)
     public static Utils.Task<String> getDomainAddressAsync(final String domain,
-                                                           @NonNull final Utils.Callback<String> callback) {
-        return Utils.doAsync(new Utils.Task<String>(callback) {
+                                                           @NonNull final Utils.Consumer<String> consumer) {
+        return UtilsBridge.doAsync(new Utils.Task<String>(consumer) {
             @RequiresPermission(INTERNET)
             @Override
             public String doInBackground() {
@@ -644,21 +668,170 @@ public final class NetworkUtils {
     }
 
     /**
+     * Return the ssid.
+     *
+     * @return the ssid.
+     */
+    @RequiresPermission(ACCESS_WIFI_STATE)
+    public static String getSSID() {
+        WifiManager wm = (WifiManager) Utils.getApp().getApplicationContext().getSystemService(WIFI_SERVICE);
+        if (wm == null) return "";
+        WifiInfo wi = wm.getConnectionInfo();
+        if (wi == null) return "";
+        String ssid = wi.getSSID();
+        if (TextUtils.isEmpty(ssid)) {
+            return "";
+        }
+        if (ssid.length() > 2 && ssid.charAt(0) == '"' && ssid.charAt(ssid.length() - 1) == '"') {
+            return ssid.substring(1, ssid.length() - 1);
+        }
+        return ssid;
+    }
+
+    /**
      * Register the status of network changed listener.
      *
      * @param listener The status of network changed listener
      */
-    public static void registerNetworkStatusChangedListener(OnNetworkStatusChangedListener listener) {
+    @RequiresPermission(ACCESS_NETWORK_STATE)
+    public static void registerNetworkStatusChangedListener(final OnNetworkStatusChangedListener listener) {
         NetworkChangedReceiver.getInstance().registerListener(listener);
     }
 
     /**
-     * unregister the status of network changed listener.
+     * Return whether the status of network changed listener has been registered.
      *
-     * @param listener The status of network changed listener
+     * @param listener The listener
+     * @return true to registered, false otherwise.
      */
-    public static void unregisterNetworkStatusChangedListener(OnNetworkStatusChangedListener listener) {
+    public static boolean isRegisteredNetworkStatusChangedListener(final OnNetworkStatusChangedListener listener) {
+        return NetworkChangedReceiver.getInstance().isRegistered(listener);
+    }
+
+    /**
+     * Unregister the status of network changed listener.
+     *
+     * @param listener The status of network changed listener.
+     */
+    public static void unregisterNetworkStatusChangedListener(final OnNetworkStatusChangedListener listener) {
         NetworkChangedReceiver.getInstance().unregisterListener(listener);
+    }
+
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, ACCESS_COARSE_LOCATION})
+    public static WifiScanResults getWifiScanResult() {
+        WifiScanResults result = new WifiScanResults();
+        if (!getWifiEnabled()) return result;
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(WIFI_SERVICE);
+        //noinspection ConstantConditions
+        List<ScanResult> results = wm.getScanResults();
+        if (results != null) {
+            result.setAllResults(results);
+        }
+        return result;
+    }
+
+    private static final long                                 SCAN_PERIOD_MILLIS    = 3000;
+    private static final Set<Utils.Consumer<WifiScanResults>> SCAN_RESULT_CONSUMERS = new CopyOnWriteArraySet<>();
+    private static       Timer                                sScanWifiTimer;
+    private static       WifiScanResults                      sPreWifiScanResults;
+
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, CHANGE_WIFI_STATE, ACCESS_COARSE_LOCATION})
+    public static void addOnWifiChangedConsumer(final Utils.Consumer<WifiScanResults> consumer) {
+        if (consumer == null) return;
+        UtilsBridge.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (SCAN_RESULT_CONSUMERS.isEmpty()) {
+                    SCAN_RESULT_CONSUMERS.add(consumer);
+                    startScanWifi();
+                    return;
+                }
+                consumer.accept(sPreWifiScanResults);
+                SCAN_RESULT_CONSUMERS.add(consumer);
+            }
+        });
+    }
+
+    private static void startScanWifi() {
+        sPreWifiScanResults = new WifiScanResults();
+        sScanWifiTimer = new Timer();
+        sScanWifiTimer.schedule(new TimerTask() {
+            @RequiresPermission(allOf = {ACCESS_WIFI_STATE, CHANGE_WIFI_STATE, ACCESS_COARSE_LOCATION})
+            @Override
+            public void run() {
+                startScanWifiIfEnabled();
+                WifiScanResults scanResults = getWifiScanResult();
+                if (isSameScanResults(sPreWifiScanResults.allResults, scanResults.allResults)) {
+                    return;
+                }
+                sPreWifiScanResults = scanResults;
+                UtilsBridge.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (Utils.Consumer<WifiScanResults> consumer : SCAN_RESULT_CONSUMERS) {
+                            consumer.accept(sPreWifiScanResults);
+                        }
+                    }
+                });
+            }
+        }, 0, SCAN_PERIOD_MILLIS);
+    }
+
+    @RequiresPermission(allOf = {ACCESS_WIFI_STATE, CHANGE_WIFI_STATE})
+    private static void startScanWifiIfEnabled() {
+        if (!getWifiEnabled()) return;
+        @SuppressLint("WifiManagerLeak")
+        WifiManager wm = (WifiManager) Utils.getApp().getSystemService(WIFI_SERVICE);
+        //noinspection ConstantConditions
+        wm.startScan();
+    }
+
+    public static void removeOnWifiChangedConsumer(final Utils.Consumer<WifiScanResults> consumer) {
+        if (consumer == null) return;
+        UtilsBridge.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                SCAN_RESULT_CONSUMERS.remove(consumer);
+                if (SCAN_RESULT_CONSUMERS.isEmpty()) {
+                    stopScanWifi();
+                }
+            }
+        });
+    }
+
+    private static void stopScanWifi() {
+        if (sScanWifiTimer != null) {
+            sScanWifiTimer.cancel();
+            sScanWifiTimer = null;
+        }
+    }
+
+    private static boolean isSameScanResults(List<ScanResult> l1, List<ScanResult> l2) {
+        if (l1 == null && l2 == null) {
+            return true;
+        }
+        if (l1 == null || l2 == null) {
+            return false;
+        }
+        if (l1.size() != l2.size()) {
+            return false;
+        }
+        for (int i = 0; i < l1.size(); i++) {
+            ScanResult r1 = l1.get(i);
+            ScanResult r2 = l2.get(i);
+            if (!isSameScanResultContent(r1, r2)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isSameScanResultContent(ScanResult r1, ScanResult r2) {
+        return r1 != null && r2 != null && UtilsBridge.equals(r1.BSSID, r2.BSSID)
+                && UtilsBridge.equals(r1.SSID, r2.SSID)
+                && UtilsBridge.equals(r1.capabilities, r2.capabilities)
+                && r1.level == r2.level;
     }
 
     public static final class NetworkChangedReceiver extends BroadcastReceiver {
@@ -670,11 +843,12 @@ public final class NetworkUtils {
         private NetworkType                         mType;
         private Set<OnNetworkStatusChangedListener> mListeners = new HashSet<>();
 
+        @RequiresPermission(ACCESS_NETWORK_STATE)
         void registerListener(final OnNetworkStatusChangedListener listener) {
             if (listener == null) return;
-            Utils.runOnUiThread(new Runnable() {
-                @SuppressLint("MissingPermission")
+            UtilsBridge.runOnUiThread(new Runnable() {
                 @Override
+                @RequiresPermission(ACCESS_NETWORK_STATE)
                 public void run() {
                     int preSize = mListeners.size();
                     mListeners.add(listener);
@@ -687,9 +861,14 @@ public final class NetworkUtils {
             });
         }
 
+        boolean isRegistered(final OnNetworkStatusChangedListener listener) {
+            if (listener == null) return false;
+            return mListeners.contains(listener);
+        }
+
         void unregisterListener(final OnNetworkStatusChangedListener listener) {
             if (listener == null) return;
-            Utils.runOnUiThread(new Runnable() {
+            UtilsBridge.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     int preSize = mListeners.size();
@@ -701,17 +880,16 @@ public final class NetworkUtils {
             });
         }
 
-        @SuppressLint("MissingPermission")
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
                 // debouncing
-                Utils.runOnUiThreadDelayed(new Runnable() {
+                UtilsBridge.runOnUiThreadDelayed(new Runnable() {
                     @Override
+                    @RequiresPermission(ACCESS_NETWORK_STATE)
                     public void run() {
                         NetworkType networkType = NetworkUtils.getNetworkType();
                         if (mType == networkType) return;
-                        LogUtils.e(networkType);
                         mType = networkType;
                         if (networkType == NetworkType.NETWORK_NO) {
                             for (OnNetworkStatusChangedListener listener : mListeners) {
@@ -732,9 +910,124 @@ public final class NetworkUtils {
         }
     }
 
+//    /**
+//     * Register the status of network changed listener.
+//     */
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    @RequiresPermission(ACCESS_NETWORK_STATE)
+//    public static void registerNetworkStatusChangedListener() {
+//        ConnectivityManager cm = (ConnectivityManager) Utils.getApp().getSystemService(Context.CONNECTIVITY_SERVICE);
+//        if (cm == null) return;
+//        NetworkCallbackImpl networkCallback = NetworkCallbackImpl.LazyHolder.INSTANCE;
+//        NetworkRequest.Builder builder = new NetworkRequest.Builder();
+//        NetworkRequest request = builder.build();
+//        cm.registerNetworkCallback(new NetworkRequest.Builder().build(), networkCallback);
+//    }
+//
+//
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    public static final class NetworkCallbackImpl extends ConnectivityManager.NetworkCallback {
+//
+//        @Override
+//        public void onAvailable(@NonNull Network network) {
+//            super.onAvailable(network);
+//            LogUtils.d(TAG, "onAvailable: " + network);
+//        }
+//
+//        @Override
+//        public void onLosing(@NonNull Network network, int maxMsToLive) {
+//            super.onLosing(network, maxMsToLive);
+//            LogUtils.d(TAG, "onLosing: " + network);
+//        }
+//
+//        @Override
+//        public void onLost(@NonNull Network network) {
+//            super.onLost(network);
+//            LogUtils.e(TAG, "onLost: " + network);
+//        }
+//
+//        @Override
+//        public void onUnavailable() {
+//            super.onUnavailable();
+//            LogUtils.e(TAG, "onUnavailable");
+//        }
+//
+//        @Override
+//        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities cap) {
+//            super.onCapabilitiesChanged(network, cap);
+//            if (cap.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+//                if (cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+//                    LogUtils.d(TAG, "onCapabilitiesChanged: 网络类型为wifi");
+//                } else if (cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+//                    LogUtils.d(TAG, "onCapabilitiesChanged: 蜂窝网络");
+//                } else {
+//                    LogUtils.d(TAG, "onCapabilitiesChanged: 其他网络");
+//                }
+//                LogUtils.d(TAG, "onCapabilitiesChanged: " + network + ", " + cap);
+//            }
+//        }
+//
+//        @Override
+//        public void onLinkPropertiesChanged(@NonNull Network network, @NonNull LinkProperties lp) {
+//            super.onLinkPropertiesChanged(network, lp);
+//            LogUtils.d(TAG, "onLinkPropertiesChanged: " + network + ", " + lp);
+//        }
+//
+//        @Override
+//        public void onBlockedStatusChanged(@NonNull Network network, boolean blocked) {
+//            super.onBlockedStatusChanged(network, blocked);
+//            LogUtils.d(TAG, "onBlockedStatusChanged: " + network + ", " + blocked);
+//        }
+//
+//        private static class LazyHolder {
+//            private static final NetworkCallbackImpl INSTANCE = new NetworkCallbackImpl();
+//        }
+//    }
+
     public interface OnNetworkStatusChangedListener {
         void onDisconnected();
 
         void onConnected(NetworkType networkType);
+    }
+
+    public static final class WifiScanResults {
+
+        private List<ScanResult> allResults    = new ArrayList<>();
+        private List<ScanResult> filterResults = new ArrayList<>();
+
+        public WifiScanResults() {
+        }
+
+        public List<ScanResult> getAllResults() {
+            return allResults;
+        }
+
+        public List<ScanResult> getFilterResults() {
+            return filterResults;
+        }
+
+        public void setAllResults(List<ScanResult> allResults) {
+            this.allResults = allResults;
+            filterResults = filterScanResult(allResults);
+        }
+
+        private static List<ScanResult> filterScanResult(final List<ScanResult> results) {
+            if (results == null || results.isEmpty()) {
+                return new ArrayList<>();
+            }
+            LinkedHashMap<String, ScanResult> map = new LinkedHashMap<>(results.size());
+            for (ScanResult result : results) {
+                if (TextUtils.isEmpty(result.SSID)) {
+                    continue;
+                }
+                ScanResult resultInMap = map.get(result.SSID);
+                if (resultInMap != null && resultInMap.level >= result.level) {
+                    continue;
+                }
+                map.put(result.SSID, result);
+            }
+            return new ArrayList<>(map.values());
+        }
+
     }
 }

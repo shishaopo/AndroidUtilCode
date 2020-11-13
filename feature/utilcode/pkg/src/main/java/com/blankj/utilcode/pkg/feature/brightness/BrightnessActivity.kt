@@ -5,8 +5,6 @@ import android.content.Intent
 import android.os.Build
 import android.widget.SeekBar
 import com.blankj.common.activity.CommonActivity
-import com.blankj.common.activity.CommonActivityItemsView
-import com.blankj.common.activity.CommonActivityTitleView
 import com.blankj.common.item.CommonItem
 import com.blankj.common.item.CommonItemSeekBar
 import com.blankj.common.item.CommonItemSwitch
@@ -50,32 +48,28 @@ class BrightnessActivity : CommonActivity() {
 
     override fun bindItems(): MutableList<CommonItem<*>> {
         return CollectionUtils.newArrayList(
-                CommonItemSeekBar("getBrightness", 255, BrightnessUtils.getBrightness(), object : SeekBar.OnSeekBarChangeListener {
+                CommonItemSeekBar("getBrightness", 255, object : CommonItemSeekBar.ProgressListener() {
+                    override fun getCurValue(): Int {
+                        return BrightnessUtils.getBrightness()
+                    }
+
                     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                         BrightnessUtils.setBrightness(progress)
                     }
-
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
                 }),
-                CommonItemSeekBar("getWindowBrightness", 255, BrightnessUtils.getWindowBrightness(window), object : SeekBar.OnSeekBarChangeListener {
+                CommonItemSeekBar("getWindowBrightness", 255, object : CommonItemSeekBar.ProgressListener() {
+                    override fun getCurValue(): Int {
+                        return BrightnessUtils.getWindowBrightness(window)
+                    }
+
                     override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                         BrightnessUtils.setWindowBrightness(window, progress)
                     }
-
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
-                    override fun onStopTrackingTouch(seekBar: SeekBar?) {}
                 }),
                 CommonItemSwitch(
                         R.string.brightness_auto_brightness,
-                        Utils.Func1 {
-                            BrightnessUtils.isAutoBrightnessEnabled()
-                        },
-                        Utils.Func1 {
-                            BrightnessUtils.setAutoBrightnessEnabled(it)
-                        }
+                        { BrightnessUtils.isAutoBrightnessEnabled() },
+                        { BrightnessUtils.setAutoBrightnessEnabled(it) }
                 )
         )
     }

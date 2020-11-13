@@ -1,3 +1,60 @@
+* `20/11/13` [add] Fix MessengerUtils ANR. Add NetworkUtils#getWifiScanResult, [add|remove]OnWifiChangedConsumer. Publish v1.30.5.
+* `20/10/29` [add] Fix MessengerUtils startService IllegalStateException. Publish v1.30.4.
+* `20/10/28` [add] Fix BusUtils ConcurrentModificationException. Publish v1.30.3.
+* `20/10/27` [add] Fix AppUtils#getAppSignatures. Add DeviceUtils#isDevelopmentSettingsEnabled. Publish v1.30.2.
+* `20/10/26` [add] Fix AppUtils#isAppForeground. Publish v1.30.1.
+* `20/10/24` [add] Publish v1.30.0.
+* `20/10/23` [fix] LanguageUtils crash on some device.
+* `20/10/21` [add] LogUtils.Config#setOnConsoleOutputListener, setOnFileOutputListener, addFileExtraHead. LogUtils.getCurrentLogFilePath.
+* `20/10/20` [opt] ToastUtils.
+* `20/10/12` [add] PermissionUtils#explain.
+* `20/10/10` [add] ClipboardUtils.
+* `20/10/08` [add] VolumeUtils.
+* `20/09/06` [add] DebouncingUtils#isValid.
+* `20/09/04` [fix] ToastUtils adapt SDK 30.
+* `20/05/28` [fix] IntentUtils#getInstallAppIntent file exist wrong. Publish v1.29.0.
+* `20/05/23` [fix] BusUtils#postSticky times not right. Publish v1.28.6.
+* `20/05/22` [add] IntentUtils#getInstallAppIntent support Uri param.
+* `20/05/21` [add] Publish bus plugin v2.6. Publish api plugin v1.4. Publish. Publish v1.28.5.
+* `20/05/19` [fix] FileUtils#copyOrMoveDird NPE.
+* `20/05/18` [add] IntentUtils#getLaunchAppDetailsSettingsIntent support isNewTask.
+* `20/05/17` [add] ImageUtils#save2Album, NetworkUtils#getSSID, UtilsTransActivity4MainProcess.
+* `20/05/03` [add] Publish bus plugin v2.5. Publish api plugin v1.3. Publish. Publish v1.28.4.
+* `20/04/30` [add] BaseItem support partialUpdate.
+* `20/04/29` [add] Publish plugin lib com.blankj:base-transform:1.0.
+* `20/04/28` [fix] LanguageUtils#applyLanguage.
+* `20/04/27` [fix] BarUtils#isNavBarVisible.
+* `20/04/26` [fix] Utils#init fit tinker. Publish v1.28.3.
+* `20/04/25` [fix] UriUtils#uri2File Unknown URI. Publish 1.28.2.
+* `20/04/24` [add] SnackbarUtils support show on the top; UriUtils#uri2InputStream.
+* `20/04/23` [fix] UriUtils#uri2File not support HW; TransActivity crash below 21.
+* `20/04/23` [fix] PhoneUtils#getSerial, PhoneUtils#getSerial crash on Android 10.
+* `20/04/20` [fix] ImageUtils#isImage.
+* `20/04/18` [fix] PermissionUtils#callback. Publish v1.28.1.
+* `20/04/17` [fix] ImageUtils#view2Bitmap, ImageUtils.getBitmap(InputStream).
+* `20/04/16` [add] ConvertUtils#int2HexString, hexString2Int.
+* `20/04/15` [add] UiMessageUtils' demo.
+* `20/04/13` [add] NumberUtils. Publish v1.28.0.
+* `20/04/12` [opt] TimeUtils#SDF_THREAD_LOCAL.
+* `20/04/11` [add] SDCardUtils#getXxTotalSize, SDCardUtils#getXxAvailableSize. FileUtils#getFsTotalSize, FileUtils#getFsAvailableSize.
+* `20/04/10` [fix] FileUtils#isFileExists; FragmentUtils#getTop bug. Publish v1.27.6.
+* `20/04/09` [add] UriUtils#res2Uri, UriUtils#uri2File support QQBrowser; ThreadUtils#getMainHandler; PathUtils#getxxPathExternalFirst.
+* `20/04/08` [fix] ActivityUtils#finish bug. Publish v1.27.5.
+* `20/04/08` [fix] CleanUtils clean dir not work. FileUtils#isFileExists. Publish v1.27.4.
+* `20/04/08` [fix] CrashUtils DefaultUncaughtExceptionHandler is wrong; LogUtils write file failed; Utils#getApp failed run on remote process. Publish v1.27.3.
+* `20/04/07` [mdf] GsonUtils#getGson() method public.
+* `20/04/04` [fix] ShadowUtils bug running on lower version devices. Publish v1.27.2.
+* `20/04/03` [fix] UtilsActivityLifecycleImpl#HashMap#remove IllegalStateException bug.
+* `20/04/02` [fix] PathUtils sdcard enable state is wrong; ActivityUtils finish activity wrong; Publish v1.27.1.
+* `20/03/31` [add] Publish v1.27.0.
+* `20/03/30` [add] BatteryUtils in subutil.
+* `20/03/27` [add] publish.gradle.
+* `20/03/24` [add] UtilsBridge to clean the utils.
+* `20/03/22` [upd] GsonUtils support custom gson.
+* `20/03/20` [add] ActivityUtils#addActivityLifecycleCallbacks, ActivityUtils#removeActivityLifecycleCallbacks.
+* `20/01/17` [upd] Leak Canary to v2.1.
+* `20/01/06` [add] ClickUtils#expandClickArea, ClickUtils#back2HomeFriendly
+* `19/11/30` [add] Publish bus plugin v2.4. Publish api plugin v1.2.
 * `19/11/28` [add] Publish v1.26.0.
 * `19/11/27` [add] Shadow demo.
 * `19/11/26` [add] MVP demo.
