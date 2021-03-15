@@ -162,8 +162,8 @@ public final class ActivityUtils {
      * @param clz The activity class.
      */
     public static void startActivity(@NonNull final Class<? extends Activity> clz) {
-        Context context = getTopActivityOrApp();
-        startActivity(context, null, context.getPackageName(), clz.getName(), null);
+//        Context context = getTopActivityOrApp();
+//        startActivity(context, null, context.getPackageName(), clz.getName(), null);
     }
 
     /**
